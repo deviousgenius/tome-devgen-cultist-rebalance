@@ -6,4 +6,5 @@ Changelog:
 
 0.0.1
 - Initial commit
+- Netherblast sends a singular projectile each with targeting in a radius 10 like Fan of Knives
 

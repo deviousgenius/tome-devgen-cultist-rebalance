@@ -6,5 +6,5 @@ Changelog:
 
 0.0.1
 - Initial commit
-- Netherblast sends a singular projectile each with targeting in a radius 10 like Fan of Knives
+- Netherblast (Empowered): Now pierces through 1-6 random enemies (Prioritizing furthermost ones) like Sunburst!
 

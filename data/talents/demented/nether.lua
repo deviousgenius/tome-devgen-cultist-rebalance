@@ -48,30 +48,37 @@ T_NETHERBLAST.action = function(self, t)
 		self:project(tg, self.x, self.y, function(px, py)
 			local target = game.level.map(px, py, engine.Map.ACTOR)
 			if not target then return end
-			tgts[#tgts+1] = target
+			tgts[#tgts+1] = {tgt=target, distance=core.fov.distance(self.x, self.y, target.x, target.y)}
 		end)
-        
 
-		if #tgts <= 0 then return true end
+		if #tgts > 0 then table.sort(tgts, function(a, b)
+            return a.distance > b.distance 
+        end) else return end
+
 
         game.logPlayer(self, "#RED#Debug message 2")
 
         local count = T_HALO_OF_RUIN.getTargetCount(self, T_HALO_OF_RUIN)
-        while count > 0 and #tgts > 0 do
-            game.logPlayer(self, "#RED#Top of while loop")
-            local tgt, id = rng.table(tgts)
+        local i = 1
 
-            self:project(
-                {type="beam", range=self:getTalentRange(t), talent=t}, 
-                tgt.x, tgt.y, 
-                DamageType.VOIDBURN, 
-                {dam=dam, dur=5, perc=perc}
-            )
+        while count > 0 and i <= #tgts do
+            local entry = tgts[i]
+            local target = entry.tgt
+            if target and target.x and target.y then
+                self:project(
+                    {type="beam", range=self:getTalentRange(t), talent=t},
+                    target.x, target.y,
+                    DamageType.VOIDBURN,
+                    {dam=dam, dur=5, perc=perc}
+                )
 
-            game.level.map:particleEmitter(self.x, self.y,tg.range, "netherlance", {tx=tgt.x - self.x, ty=tgt.y - self.y})
-            game:playSoundNear(self, "talents/netherlance")
+                game.level.map:particleEmitter(self.x, self.y, tg.range, "netherlance",
+                    {tx = target.x - self.x, ty = target.y - self.y})
+
+                game:playSoundNear(self, "talents/netherlance")
+            end
             count = count - 1
-            table.remove(tgts, id)
+            i = i + 1
         end
 
         self:removeEffect(self.EFF_HALO_OF_RUIN)
@@ -92,7 +99,7 @@ end
 
 T_HALO_OF_RUIN.info = function(self, t)
 		return ([[Each time you cast a non-instant Demented spell, a nether spark begins orbiting around you for 10 turns, to a maximum of 5. Each spark increases your critical strike chance by %d%%, and on reaching 5 sparks your next Nether spell will consume all sparks to empower itself:
-#PURPLE#Netherblast:#LAST# Becomes a deadly lance of void energy, piercing through %d random enemies and dealing an additional %d%% damage over 5 turns.
+#PURPLE#Netherblast:#LAST# Release a burst of void energy, piercing through %d random enemies (Prioritizing furthermost ones) and dealing an additional %d%% damage over 5 turns.
 #PURPLE#Rift Cutter:#LAST# Those in the rift will be pinned for %d turns, take %0.2f temporal damage each turn, and the rift explosion has %d increased radius.
 #PURPLE#Spatial Distortion:#LAST# An Entropic Maw will be summoned at the rift's exit for %d turns, pulling in and taunting nearby targets with it's tendrils.
 The damage will increase with your Spellpower.  Entropic Maw stats will increase with level and your Magic stat.]]):

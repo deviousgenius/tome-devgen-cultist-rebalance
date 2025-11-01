@@ -1,12 +1,20 @@
 local Talents = require "engine.interface.ActorTalents"
 
-t_netherblast = Talents.talents_def.T_NETHERBLAST
 
-t_netherblast.target = function(self, t)
+-- Netherblast
+
+local T_NETHERBLAST = Talents.talents_def.T_NETHERBLAST
+local T_HALO_OF_RUIN = Talents.talents_def.T_HALO_OF_RUIN
+
+T_NETHERBLAST.direct_hit = true
+T_NETHERBLAST.requires_target = false
+T_HALO_OF_RUIN.getTargetCount = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5)) end
+
+T_NETHERBLAST.target = function(self, t)
     local eff = self:hasEffect(self.EFF_HALO_OF_RUIN)
     if eff and eff.charges==5 then
         --return {type="beam", range=self:getTalentRange(t), friendlyfire=false, talent=t}
-        return {type="cone", cone_angle = 75, range=0, talent=t, stop_block = true, friendlyfire=true, radius=self:getTalentRange(t), display_line_step=false, display={particle="netherblast"}}
+        return {type="ball", range=0, talent=t, friendlyfire=false, radius=self:getTalentRange(t), display_line_step=false, display={particle="netherblast"}}
     else
         local ff = false
         if game.zone.short_name == "cults+ft-cultist" then ff = true end  -- This zone needs NB to be FF and making an entirely separate talent seems silly
@@ -15,7 +23,7 @@ t_netherblast.target = function(self, t)
     end
 end
 
-t_netherblast.action = function(self, t)
+T_NETHERBLAST.action = function(self, t)
     local tg = self:getTalentTarget(t)
     local x, y = self:getTarget(tg)
     if not x or not y then return nil end
@@ -24,6 +32,8 @@ t_netherblast.action = function(self, t)
     local eff = self:hasEffect(self.EFF_HALO_OF_RUIN)
     
     if eff and eff.charges == 5 then
+        self.turn_procs.halo_of_ruin = true
+		local perc = self:callTalent(self.T_HALO_OF_RUIN, "getSpikeDamage")
 
         local tgts = {}
 		self:project(tg, x, y, function(px, py)
@@ -32,24 +42,29 @@ t_netherblast.action = function(self, t)
 			tgts[#tgts+1] = target
 		end)
 
-        local tgt_cnt = #tgts
-        if tgt_cnt > 0 then
-            local count = tgt_cnt
-            while count > 0 and #tgts > 0 do
-                local tgt, id = rng.table(tgts)
-                if tgt then
-                    self:projectile(
-                        {type="bolt", range=self:getTalentRange(t), talent=t, display={particle="netherblast"}},
-                        tgt.x, tgt.y,
-                        DamageType.VOID,
-                        dam,
-                        {type="voidblast"}
-                    )
-                    count = count - 1
-                    table.remove(tgts, id)
-                end
-            end
+		if #tgts <= 0 then return true end
+
+        local count = T_HALO_OF_RUIN.getTargetCount(self, T_HALO_OF_RUIN)
+        while count > 0 and #tgts > 0 do
+            local tgt, id = rng.table(tgts)
+
+            self:project(
+                {type="beam", range=self:getTalentRange(t), talent=t}, 
+                tgt.x, tgt.y, 
+                DamageType.VOIDBURN, 
+                {dam=dam, dur=5, perc=perc}
+            )
+
+            -- game.level.map:particleEmitter(self.x, self.y, tg.range, "netherlance", {tx=tgt.x - self.x, ty=tgt.y - self.y})
+            game.level.map:particleEmitter(self.x, self.y,tg.range, "netherlance", {tx=tgt.x - self.x, ty=tgt.y - self.y})
+
+            game:playSoundNear(self, "talents/netherlance")
+
+            count = count - 1
+            table.remove(tgts, id)
         end
+
+        self:removeEffect(self.EFF_HALO_OF_RUIN)
     
     else
         self:projectile(tg, x, y, DamageType.VOID, dam, {type="voidblast"})

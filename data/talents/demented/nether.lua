@@ -9,16 +9,11 @@ local T_HALO_OF_RUIN = Talents.talents_def.T_HALO_OF_RUIN
 
 T_NETHERBLAST.direct_hit = true
 T_NETHERBLAST.requires_target = false
+
+T_NETHERBLAST.getTargetCount = function(self, t) return math.floor( (self:combatTalentScale(t, 1, 5) - 1) / 2) end
 T_HALO_OF_RUIN.getTargetCount = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5)) end
 
-T_NETHERBLAST.requires_target = function(self, t)
-    local eff = self:hasEffect(self.EFF_HALO_OF_RUIN)
-    if eff and eff.charges == 5 then
-        return false  -- No targeting needed when Halo is at 5 charges
-    else
-        return true   -- Normal targeting required
-    end
-end
+
 
 T_NETHERBLAST.target = function(self, t)
     local eff = self:hasEffect(self.EFF_HALO_OF_RUIN)
@@ -84,10 +79,16 @@ T_NETHERBLAST.action = function(self, t)
         self:removeEffect(self.EFF_HALO_OF_RUIN)
     
     else
-        local x, y = self:getTarget(tg)
-        if not x or not y then return nil end
-        self:projectile(tg, x, y, DamageType.VOID, dam, {type="voidblast"})
-        game:playSoundNear(self, "talents/netherblast")    
+        local shots = t.getTargetCount(self, t) + 1 -- +1 to account for the base shot
+        
+        for i = 1, shots do
+            local tg = {type="bolt", range=self:getTalentRange(t), talent=t, friendlyblock=false, display={particle="netherblast"}}
+            local x, y = self:getTarget(tg)
+            if x and y then
+                self:projectile(tg, x, y, DamageType.VOID, dam, {type="voidblast"})
+                game:playSoundNear(self, "talents/netherblast")
+            end
+        end
     end
 
     if self.in_combat then
@@ -96,6 +97,17 @@ T_NETHERBLAST.action = function(self, t)
     return true
         
 end
+
+T_NETHERBLAST.info = function(self, t)
+		local dam = t.getDamage(self,t)/2
+		local backlash = t.getBacklash(self,t)
+		return ([[Fire a burst of unstable void energy, dealing %0.2f darkness and %0.2f temporal damage to the target. The power of this spell inflicts entropic backlash on you, causing you to take %d damage over 8 turns. This damage counts as entropy for the purpose of Entropic Gift.
+        
+You fire an additional shot at talent level 3, and another at talent level 5.
+        
+The damage will increase with your Spellpower.]]):
+		tformat(damDesc(self, DamageType.DARKNESS, dam), damDesc(self, DamageType.TEMPORAL, dam), backlash)
+	end
 
 T_HALO_OF_RUIN.info = function(self, t)
 		return ([[Each time you cast a non-instant Demented spell, a nether spark begins orbiting around you for 10 turns, to a maximum of 5. Each spark increases your critical strike chance by %d%%, and on reaching 5 sparks your next Nether spell will consume all sparks to empower itself:

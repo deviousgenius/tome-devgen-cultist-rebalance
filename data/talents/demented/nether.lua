@@ -2,10 +2,13 @@ local Talents = require "engine.interface.ActorTalents"
 local DamageType = require "engine.DamageType"
 local damDesc = Talents.damDesc
 
--- Netherblast
-
 local T_NETHERBLAST = Talents.talents_def.T_NETHERBLAST
+local T_RIFT_CUTTER = Talents.talents_def.T_RIFT_CUTTER
+local T_SPATIAL_DISTORTION = Talents.talents_def.T_SPATIAL_DISTORTION
 local T_HALO_OF_RUIN = Talents.talents_def.T_HALO_OF_RUIN
+
+
+-- Netherblast
 
 T_NETHERBLAST.direct_hit = true
 T_NETHERBLAST.requires_target = false
@@ -107,7 +110,82 @@ You fire an additional shot at talent level 3, and another at talent level 5.
         
 The damage will increase with your Spellpower.]]):
 		tformat(damDesc(self, DamageType.DARKNESS, dam), damDesc(self, DamageType.TEMPORAL, dam), backlash)
+end
+
+-- Rift Cutter
+
+T_RIFT_CUTTER.getPin = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 2, 8)) end
+
+T_RIFT_CUTTER.action = function(self, t)
+    local tg = self:getTalentTarget(t)
+    local x, y = self:getTarget(tg)
+    if not x or not y then return nil end
+    local dam = self:spellCrit(t.getDamage(self, t))
+    local edam = 0
+    local pin = t.getPin(self, t)
+    local rad = 1
+    local eff = self:hasEffect(self.EFF_HALO_OF_RUIN)
+    if eff and eff.charges==5 then
+        self.turn_procs.halo_of_ruin = true
+        edam = self:spellCrit(self:callTalent(self.T_HALO_OF_RUIN, "getRiftDamage"))
+        rad = rad + self:callTalent(self.T_HALO_OF_RUIN, "getRiftRadius")
+        self:removeEffect(self.EFF_HALO_OF_RUIN)
+    end
+    local grids = self:project(tg, x, y, DamageType.DARKNESS, dam)
+    local _ _, x, y = self:canProject(tg, x, y)
+    game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "shadow_beam", {tx=x-self.x, ty=y-self.y})
+
+    game.level.map:addEffect(self, self.x, self.y, 4,
+        engine.DamageType.RIFT,
+        {
+            dam = dam, edam = edam,
+            pin = pin,
+            radius = 1, self = self, talent = t
+        },
+        0, 5, grids,
+        MapEffect.new{
+            zdepth=6,
+            color_br=12, color_bg=12, color_bb=12,
+            effect_shader="shader_images/unstable_rift_ground.png"
+        },
+        function(e, update_shape_only)
+            if not update_shape_only and e.duration == 1 then
+                local DamageType = require("engine.DamageType") --block_path means that it will always hit the tile we've targeted here
+
+                for px, ys in pairs(e.grids) do for py, _ in pairs(ys) do
+                    local aoe = {type="ball", radius = rad, friendlyfire=false, talent=e.dam.talent, block_path = function(self, t) return false, true, true end}
+                    e.src:projectSource(aoe, px, py, DamageType.RIFT_EXPLOSION, e.dam.dam, nil, e.dam.talent)
+                    game.level.map:particleEmitter(px, py, 1, "unstable_rift_explosion", {id=1, radius=rad})
+                    game.level.map:particleEmitter(px, py, 1, "unstable_rift_explosion", {id=2, radius=rad})
+                    game.level.map:particleEmitter(px, py, 1, "unstable_rift_explosion", {id=3, radius=rad})
+                    game.level.map:particleEmitter(px, py, 1, "unstable_rift_explosion", {id=4, radius=rad})
+                end end
+                e.duration = 0
+
+                game:playSoundNear(self, "talents/fireflash")
+                --I'll let map remove it
+            end						
+        end
+    )
+    if self.in_combat then
+        self:setEffect(self.EFF_ENTROPIC_WASTING, 8, {src=self, power=t.getBacklash(self, t) / 8})
+    end
+    game:playSoundNear(self, "talents/slime")
+    return true
+end
+
+T_RIFT_CUTTER.info = function(self, t)
+		return ([[Fire a beam of energy that rakes across the ground, dealing %0.2f darkness damage to enemies within and leaving behind an unstable rift. After 3 turns the rift detonates, dealing %0.2f temporal damage to adjacent enemies.
+		Targets cannot be struck by more than a single rift explosion at once. Those in the rift will be pinned for %d turns.
+		The power of this spell inflicts entropic backlash on you, causing you to take %d damage over 8 turns. This damage counts as entropy for the purpose of Entropic Gift.
+		The damage will increase with your Spellpower.]]):
+		tformat(damDesc(self, DamageType.DARKNESS, t.getDamage(self,t)), damDesc(self, DamageType.TEMPORAL, t.getDamage(self,t)), t.getPin(self, t), t.getBacklash(self, t))
 	end
+
+
+-- Halo of Ruin
+
+-- Idea: Double crit chance per spark? So at 5 sparks you get 20% crit chance?
 
 T_HALO_OF_RUIN.info = function(self, t)
 		return ([[Each time you cast a non-instant Demented spell, a nether spark begins orbiting around you for 10 turns, to a maximum of 5. Each spark increases your critical strike chance by %d%%, and on reaching 5 sparks your next Nether spell will consume all sparks to empower itself:

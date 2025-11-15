@@ -10,12 +10,13 @@ local T_SANITY_WARP = Talents.talents_def.T_SANITY_WARP
 T_HIDEOUS_VISIONS.getChance = function(self, t) return self:combatTalentScale(t, 10, 30) end
 T_HIDEOUS_VISIONS.radius = function(self, t) return self:combatTalentScale(t, 1, 2.6) end
 T_HIDEOUS_VISIONS.getDamage = function(self, t) return self:combatTalentSpellDamage(t, 10, 60) end
+T_HIDEOUS_VISIONS.getDuration = function(self, t) return self:combatTalentScale(t, 2, 6) end
 
-T_HIDEOUS_VISIONS.hideous_vision = function(self, t, target)
+T_HIDEOUS_VISIONS.hideous_vision = function(self, t, target, from_sanity_warp)
 	if not target.dead then
 
 		if target._hallucination and not target._hallucination.dead then
-			target._hallucination:die(self)
+			target._hallucination:die(self, from_sanity_warp)
 		end
 
 		local x, y = util.findFreeGrid(target.x, target.y, 1, true, {[Map.ACTOR]=true})
@@ -59,7 +60,8 @@ T_HIDEOUS_VISIONS.hideous_vision = function(self, t, target)
 		m.tg = target
 		m.target = target
 		m.hallucination = true
-		m.on_die = function(self)
+		m.from_sanity_warp = from_sanity_warp
+		m.on_die = function(self, src, from_sanity_warp)
 			local target = self.target
 			local DamageType = require "engine.DamageType"
 
@@ -74,6 +76,18 @@ T_HIDEOUS_VISIONS.hideous_vision = function(self, t, target)
                 local damage = self.summoner:spellCrit(t.getDamage(self.summoner, t))
                 self.summoner:projectSource(tg, target.x, target.y, DamageType.DARKNESS, damage, nil, t)
                 game.level.map:particleEmitter(self.x, self.y, t.radius(self.summoner, t), "generic_ball", {radius=t.radius(self.summoner, t), rm=50, rM=50, gm=50, gM=50, bm=50, bM=50, am=200, aM=255})
+                
+                -- Apply confusion if this was from Sanity Warp
+                if from_sanity_warp or self.from_sanity_warp then
+                	local confuse_chance = t.getChance(self.summoner, t)
+                	local confuse_tg = {type="ball", radius=t.radius(self.summoner, t), range=100, friendlyfire=false, talent=t}
+                	self.summoner:project(confuse_tg, target.x, target.y, DamageType.CONFUSION, {
+                		dur=t.getDuration(self.summoner, t) - 1,
+                		dam=confuse_chance,
+                		power_check=function() return self.summoner:combatSpellpower() end
+                	})
+                end
+                
                 if target:hasEffect(target.EFF_CACOPHONY) then
                     local ceff = target:hasEffect(target.EFF_CACOPHONY)
                     local cdam = ceff.power * damage
@@ -105,8 +119,9 @@ T_HIDEOUS_VISIONS.info = function(self, t)
 		local radius = self:getTalentRadius(t)
 		return ([[Each time an enemy takes damage from Dark Whispers, there is a %d%% chance for one of their visions to manifest in an adjacent tile for %d turns. This vision takes no actions but the victim will deal %d%% reduced damage to all other targets until the vision is slain.
 		A target cannot have more than one hallucination at a time.
-When a hallucination from Hideous Visions is slain, it unleashes a psychic shriek dealing %0.2f darkness damage to enemies in radius %d.]]):
-		tformat(chance, dur, damage, sanityWarpDamage, radius)
+When a hallucination from Hideous Visions is slain, it unleashes a psychic shriek dealing %0.2f darkness damage to enemies in radius %d.
+If hallucinations dying is caused by Sanity Warp, the victim is also confused for %d turns at %d%% power.]]):
+		tformat(chance, dur, damage, sanityWarpDamage, radius, dur, chance)
 	end
 
 -- Sanity Warp
@@ -144,7 +159,7 @@ T_SANITY_WARP.action = function(self, t)
 		-- Spawn a new hallucination on each target (which kills the old one)
 		for _, target in ipairs(targets) do
 			if target and not target.dead then
-				self:getTalentFromId(self.T_HIDEOUS_VISIONS).hideous_vision(self, self:getTalentFromId(self.T_HIDEOUS_VISIONS), target)
+				self:getTalentFromId(self.T_HIDEOUS_VISIONS).hideous_vision(self, self:getTalentFromId(self.T_HIDEOUS_VISIONS), target, true)
 			end
 		end
 	end

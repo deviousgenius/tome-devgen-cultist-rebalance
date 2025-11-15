@@ -20,4 +20,6 @@ Demented/Nether
 
 Demented/Madness
 - Hideous Visions: Increase spawn rate from a flat 10% to scaling from 10% to 35%. Whenever a second hallucination would spawn, the first one is immediately destroyed. Additionally, the effect from the old Sanity Warp is baked into Hideous Visions!
-- Sanity Warp (Rework): Spawn up to 1-3 additional hallucinations on enemies who already have one, causing the previous hallucinations to die.
+- Sanity Warp (Rework): 
+    Spawn up to 1-3 additional hallucinations on enemies who already have one, causing the previous hallucinations to die.
+    If hallucinations dying is caused by Sanity Warp, the victim is also confused for 2-7 turns at 12%-35% power.

@@ -6,6 +6,6 @@ Changelog:
 
 0.0.1
 - Initial commit
-- Netherblast: You fire an additional shot at talent level 3, and another at talent level 5.
-- Netherblast (Empowered): Now pierces through 1-6 random enemies (Prioritizing furthermost ones) like Sunburst!
+- Netherblast: You fire an additional shot at talent level 5.
+- Netherblast (Empowered): Now pierces through 1-6 random enemies (Prioritizing furthermost ones) like Sunburst. An additional projectile is fired at Netherblast's talent level 5 to reflect the additional projectile.
 - Rift Cutter: The pin is now part of the spell without being empowered!

@@ -13,3 +13,4 @@ Changelog:
         If the target is blinded, they will be stunned.
         If the target is confused, they will be disarmed.
 - Rift Cutter (Empowered): Casts an additional time.
+- Spatial Distortion: Now summons the Entropic Maw as part of the spell.

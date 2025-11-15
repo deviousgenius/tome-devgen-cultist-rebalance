@@ -8,4 +8,8 @@ Changelog:
 - Initial commit
 - Netherblast: You fire an additional shot at talent level 5.
 - Netherblast (Empowered): Now pierces through 1-6 random enemies (Prioritizing furthermost ones) like Sunburst. An additional projectile is fired at Netherblast's talent level 5 to reflect the additional projectile.
-- Rift Cutter: The pin is now part of the spell without being empowered!
+- Rift Cutter: The pin is now part of the spell without being empowered. 
+        If the target is pinned, they will be silenced.
+        If the target is blinded, they will be stunned.
+        If the target is confused, they will be disarmed.
+- Rift Cutter (Empowered): Casts an additional time.

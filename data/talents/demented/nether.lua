@@ -130,56 +130,95 @@ end
 T_RIFT_CUTTER.getPin = function(self, t) return math.floor(self:combatTalentLimit(t, 10, 2, 8)) end
 
 T_RIFT_CUTTER.action = function(self, t)
-    local tg = self:getTalentTarget(t)
-    local x, y = self:getTarget(tg)
-    if not x or not y then return nil end
+    
     local dam = self:spellCrit(t.getDamage(self, t))
     local edam = 0
     local pin = t.getPin(self, t)
     local rad = 1
     local eff = self:hasEffect(self.EFF_HALO_OF_RUIN)
-    if eff and eff.charges==5 then
+
+    -- number of shots: 2 if halo active (charges == 5), otherwise 1
+    local shots = 1
+    if eff and eff.charges == 5 then
+        shots = 2
         self.turn_procs.halo_of_ruin = true
         edam = self:spellCrit(self:callTalent(self.T_HALO_OF_RUIN, "getRiftDamage"))
         rad = rad + self:callTalent(self.T_HALO_OF_RUIN, "getRiftRadius")
         self:removeEffect(self.EFF_HALO_OF_RUIN)
     end
-    local grids = self:project(tg, x, y, DamageType.DARKNESS, dam)
-    local _ _, x, y = self:canProject(tg, x, y)
-    game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "shadow_beam", {tx=x-self.x, ty=y-self.y})
 
-    game.level.map:addEffect(self, self.x, self.y, 4,
-        engine.DamageType.RIFT,
-        {
-            dam = dam, edam = edam,
-            pin = pin,
-            radius = 1, self = self, talent = t
-        },
-        0, 5, grids,
-        MapEffect.new{
-            zdepth=6,
-            color_br=12, color_bg=12, color_bb=12,
-            effect_shader="shader_images/unstable_rift_ground.png"
-        },
-        function(e, update_shape_only)
-            if not update_shape_only and e.duration == 1 then
-                local DamageType = require("engine.DamageType") --block_path means that it will always hit the tile we've targeted here
+    for i = 1, shots do
+        local tg = self:getTalentTarget(t)
+        local x, y = self:getTarget(tg)
+        if not x or not y then return nil end
+        local grids = self:project(tg, x, y, DamageType.DARKNESS, dam)
 
-                for px, ys in pairs(e.grids) do for py, _ in pairs(ys) do
-                    local aoe = {type="ball", radius = rad, friendlyfire=false, talent=e.dam.talent, block_path = function(self, t) return false, true, true end}
-                    e.src:projectSource(aoe, px, py, DamageType.RIFT_EXPLOSION, e.dam.dam, nil, e.dam.talent)
-                    game.level.map:particleEmitter(px, py, 1, "unstable_rift_explosion", {id=1, radius=rad})
-                    game.level.map:particleEmitter(px, py, 1, "unstable_rift_explosion", {id=2, radius=rad})
-                    game.level.map:particleEmitter(px, py, 1, "unstable_rift_explosion", {id=3, radius=rad})
-                    game.level.map:particleEmitter(px, py, 1, "unstable_rift_explosion", {id=4, radius=rad})
-                end end
-                e.duration = 0
+        for gx, ys in pairs(grids) do
+            for gy, _ in pairs(ys) do
+                local target = game.level.map(gx, gy, engine.Map.ACTOR)
+                if target then
+                    if target:hasEffect(target.EFF_PINNED) and target:canBe("silence") then
+                    target:setEffect(target.EFF_SILENCED, pin, {
+                        apply_power = self:combatSpellpower()
+                    })
+                    end
 
-                game:playSoundNear(self, "talents/fireflash")
-                --I'll let map remove it
-            end						
+                    if target:hasEffect(target.EFF_BLINDED) and target:canBe("stun") then
+                    target:setEffect(target.EFF_STUNNED, pin, {
+                        apply_power = self:combatSpellpower()
+                    })
+                    end
+
+                    if target:hasEffect(target.EFF_CONFUSED) and target:canBe("disarm") then
+                    target:setEffect(target.EFF_DISARMED, pin, {
+                        apply_power = self:combatSpellpower()
+                    })
+                    end
+
+                    -- Apply pin first
+                    target:setEffect(target.EFF_PINNED, pin, {power=pin_power, src=self, talent=t})
+                    
+                end
+            end
         end
-    )
+
+        local _ _, x, y = self:canProject(tg, x, y)
+        game.level.map:particleEmitter(self.x, self.y, math.max(math.abs(x-self.x), math.abs(y-self.y)), "shadow_beam", {tx=x-self.x, ty=y-self.y})
+        game.level.map:addEffect(self, self.x, self.y, 4,
+            engine.DamageType.RIFT,
+            {
+                dam = dam, edam = edam,
+                pin = pin,
+                radius = 1, self = self, talent = t
+            },
+            0, 5, grids,
+            MapEffect.new{
+                zdepth=6,
+                color_br=12, color_bg=12, color_bb=12,
+                effect_shader="shader_images/unstable_rift_ground.png"
+            },
+            function(e, update_shape_only)
+                if not update_shape_only and e.duration == 1 then
+                    local DamageType = require("engine.DamageType") --block_path means that it will always hit the tile we've targeted here
+
+                    for px, ys in pairs(e.grids) do for py, _ in pairs(ys) do
+                        
+                        local aoe = {type="ball", radius = rad, friendlyfire=false, talent=e.dam.talent, block_path = function(self, t) return false, true, true end}
+                        e.src:projectSource(aoe, px, py, DamageType.RIFT_EXPLOSION, e.dam.dam, nil, e.dam.talent)
+                        game.level.map:particleEmitter(px, py, 1, "unstable_rift_explosion", {id=1, radius=rad})
+                        game.level.map:particleEmitter(px, py, 1, "unstable_rift_explosion", {id=2, radius=rad})
+                        game.level.map:particleEmitter(px, py, 1, "unstable_rift_explosion", {id=3, radius=rad})
+                        game.level.map:particleEmitter(px, py, 1, "unstable_rift_explosion", {id=4, radius=rad})
+                    end end
+                    e.duration = 0
+
+                    game:playSoundNear(self, "talents/fireflash")
+                    --I'll let map remove it
+                end
+            end
+        )
+    end
+
     if self.in_combat then
         self:setEffect(self.EFF_ENTROPIC_WASTING, 8, {src=self, power=t.getBacklash(self, t) / 8})
     end
@@ -187,9 +226,15 @@ T_RIFT_CUTTER.action = function(self, t)
     return true
 end
 
+
 T_RIFT_CUTTER.info = function(self, t)
 		return ([[Fire a beam of energy that rakes across the ground, dealing %0.2f darkness damage to enemies within and leaving behind an unstable rift. After 3 turns the rift detonates, dealing %0.2f temporal damage to adjacent enemies.
-		Targets cannot be struck by more than a single rift explosion at once. Those in the rift will be pinned for %d turns.
+		Targets cannot be struck by more than a single instance of a rift explosion at once (Still works if you cast multiple).
+        Those in the rift will be pinned.
+        If the target is pinned, they will be silenced.
+        If the target is blinded, they will be stunned.
+        If the target is confused, they will be disarmed.
+        All effects will be applied for %d turns.
 		The power of this spell inflicts entropic backlash on you, causing you to take %d damage over 8 turns. This damage counts as entropy for the purpose of Entropic Gift.
 		The damage will increase with your Spellpower.]]):
 		tformat(damDesc(self, DamageType.DARKNESS, t.getDamage(self,t)), damDesc(self, DamageType.TEMPORAL, t.getDamage(self,t)), t.getPin(self, t), t.getBacklash(self, t))
@@ -203,8 +248,8 @@ T_RIFT_CUTTER.info = function(self, t)
 T_HALO_OF_RUIN.info = function(self, t)
 		return ([[Each time you cast a non-instant Demented spell, a nether spark begins orbiting around you for 10 turns, to a maximum of 5. Each spark increases your critical strike chance by %d%%, and on reaching 5 sparks your next Nether spell will consume all sparks to empower itself:
 #PURPLE#Netherblast:#LAST# Release a burst of void energy, piercing through %d random enemies (Prioritizing furthermost ones) and dealing an additional %d%% damage over 5 turns. An additional projectile is fired at Netherblast talent level 5.
-#PURPLE#Rift Cutter:#LAST# Those in the rift will be pinned for %d turns, take %0.2f temporal damage each turn, and the rift explosion has %d increased radius.
+#PURPLE#Rift Cutter:#LAST# This talent is cast an additional time. Those in the rift will take %0.2f temporal damage each turn, and the rift explosion has %d increased radius.
 #PURPLE#Spatial Distortion:#LAST# An Entropic Maw will be summoned at the rift's exit for %d turns, pulling in and taunting nearby targets with it's tendrils.
 The damage will increase with your Spellpower.  Entropic Maw stats will increase with level and your Magic stat.]]):
-		tformat(t.getCrit(self,t), t.getTargetCount(self,t), t.getSpikeDamage(self,t)*100, t.getPin(self, t), damDesc(self, DamageType.TEMPORAL, t.getRiftDamage(self,t)), t.getRiftRadius(self,t), t.getSpatialDuration(self,t))
+		tformat(t.getCrit(self,t), t.getTargetCount(self,t), t.getSpikeDamage(self,t)*100, damDesc(self, DamageType.TEMPORAL, t.getRiftDamage(self,t)), t.getRiftRadius(self,t), t.getSpatialDuration(self,t))
 end

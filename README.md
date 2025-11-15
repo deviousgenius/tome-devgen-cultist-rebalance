@@ -30,4 +30,8 @@ Demented/Void
 
 Demented/Timethief
 - Accelerate: Added a passive movement speed increase by 11%-50%.
-- Switch: It's now instant.
+- Switch: Is now instant.
+
+Demented/Rift
+- Reality Fracture: Is now instant and chance of rifts spawning is increased to 50%.
+- Quantum Tunneling: Is now instant.

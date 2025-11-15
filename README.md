@@ -23,3 +23,7 @@ Demented/Madness
 - Sanity Warp (Rework): 
     Spawn up to 1-3 additional hallucinations on enemies who already have one, causing the previous hallucinations to die.
     If hallucinations dying is caused by Sanity Warp, the victim is also confused for 2-7 turns at 12%-35% power.
+
+Demented/Void
+- Nullmail:
+    Additionally increases armor hardiness by 9%-37% and you gain 10%-55% stun immunity.

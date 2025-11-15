@@ -19,3 +19,4 @@
 
 load('/data-devgen-cultist-rebalance/talents/demented/nether.lua')
 load('/data-devgen-cultist-rebalance/talents/demented/madness.lua')
+load('/data-devgen-cultist-rebalance/talents/demented/void.lua')

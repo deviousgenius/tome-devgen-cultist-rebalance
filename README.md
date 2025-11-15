@@ -26,4 +26,8 @@ Demented/Madness
 
 Demented/Void
 - Nullmail:
-    Additionally increases armor hardiness by 9%-37% and you gain 10%-55% stun immunity.
+    Additionally increases armor hardiness by 9%-37% and you gain 10%-55% stun immunity. (Hint: Nullmail and Light Armor Mastery at 5/5 offer 100% Armor Hardiness together!)
+
+Demented/Timethief
+- Accelerate: Added a passive movement speed increase by 11%-50%.
+- Switch: It's now instant.

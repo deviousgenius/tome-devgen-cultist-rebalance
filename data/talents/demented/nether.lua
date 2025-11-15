@@ -13,8 +13,15 @@ local T_HALO_OF_RUIN = Talents.talents_def.T_HALO_OF_RUIN
 T_NETHERBLAST.direct_hit = true
 T_NETHERBLAST.requires_target = false
 
-T_NETHERBLAST.getTargetCount = function(self, t) return math.floor( (self:combatTalentScale(t, 1, 5) - 1) / 2) end
-T_HALO_OF_RUIN.getTargetCount = function(self, t) return math.floor(self:combatTalentScale(t, 1, 5)) end
+T_HALO_OF_RUIN.getTargetCount = function(self, t) 
+    local targetCount
+    if self:getTalentLevel(self.T_NETHERBLAST) >= 5 then
+        targetCount = math.floor(self:combatTalentScale(t, 1, 5)) + 1 -- Extra target at level 5
+    else
+        targetCount = math.floor(self:combatTalentScale(t, 1, 5))
+    end
+    return targetCount
+end
 
 
 
@@ -82,7 +89,13 @@ T_NETHERBLAST.action = function(self, t)
         self:removeEffect(self.EFF_HALO_OF_RUIN)
     
     else
-        local shots = t.getTargetCount(self, t) + 1 -- +1 to account for the base shot
+        local shots
+
+        if self:getTalentLevel(t) >= 5 then
+            shots = 2
+        else
+            shots = 1
+        end
         
         for i = 1, shots do
             local tg = {type="bolt", range=self:getTalentRange(t), talent=t, friendlyblock=false, display={particle="netherblast"}}
@@ -106,7 +119,7 @@ T_NETHERBLAST.info = function(self, t)
 		local backlash = t.getBacklash(self,t)
 		return ([[Fire a burst of unstable void energy, dealing %0.2f darkness and %0.2f temporal damage to the target. The power of this spell inflicts entropic backlash on you, causing you to take %d damage over 8 turns. This damage counts as entropy for the purpose of Entropic Gift.
         
-You fire an additional shot at talent level 3, and another at talent level 5.
+You fire an additional shot at talent level 5.
         
 The damage will increase with your Spellpower.]]):
 		tformat(damDesc(self, DamageType.DARKNESS, dam), damDesc(self, DamageType.TEMPORAL, dam), backlash)
@@ -189,7 +202,7 @@ T_RIFT_CUTTER.info = function(self, t)
 
 T_HALO_OF_RUIN.info = function(self, t)
 		return ([[Each time you cast a non-instant Demented spell, a nether spark begins orbiting around you for 10 turns, to a maximum of 5. Each spark increases your critical strike chance by %d%%, and on reaching 5 sparks your next Nether spell will consume all sparks to empower itself:
-#PURPLE#Netherblast:#LAST# Release a burst of void energy, piercing through %d random enemies (Prioritizing furthermost ones) and dealing an additional %d%% damage over 5 turns.
+#PURPLE#Netherblast:#LAST# Release a burst of void energy, piercing through %d random enemies (Prioritizing furthermost ones) and dealing an additional %d%% damage over 5 turns. An additional projectile is fired at Netherblast talent level 5.
 #PURPLE#Rift Cutter:#LAST# Those in the rift will be pinned for %d turns, take %0.2f temporal damage each turn, and the rift explosion has %d increased radius.
 #PURPLE#Spatial Distortion:#LAST# An Entropic Maw will be summoned at the rift's exit for %d turns, pulling in and taunting nearby targets with it's tendrils.
 The damage will increase with your Spellpower.  Entropic Maw stats will increase with level and your Magic stat.]]):

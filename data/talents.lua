@@ -18,3 +18,4 @@
 -- darkgod@te4.org
 
 load('/data-devgen-cultist-rebalance/talents/demented/nether.lua')
+load('/data-devgen-cultist-rebalance/talents/demented/madness.lua')

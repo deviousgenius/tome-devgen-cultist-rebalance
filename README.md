@@ -14,3 +14,4 @@ Changelog:
         If the target is confused, they will be disarmed.
 - Rift Cutter (Empowered): Casts an additional time.
 - Spatial Distortion: Now summons the Entropic Maw as part of the spell.
+- Spatial Distortion (Empowered): The Entropic Maw turns into the more powerful hungering mouth. The mouth can draw all enemies in radius 10 for 2 spaces towards itself or taunt nearby enemies with its tendrils.

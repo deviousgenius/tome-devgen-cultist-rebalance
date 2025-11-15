@@ -245,10 +245,6 @@ T_SPATIAL_DISTORTION.action = function(self, t)
     _, _, _, x2, y2 = self:canProject(tg, x2, y2)
     local sdur = t.getSpatialDuration(self, t)
     local eff = self:hasEffect(self.EFF_HALO_OF_RUIN)
-        if eff and eff.charges==5 then		
-        self.turn_procs.halo_of_ruin = true
-        self:removeEffect(self.EFF_HALO_OF_RUIN)
-    end		
     
     local dam = self:spellCrit(t.getDamage(self, t))
     self:project(tg, x, y, function(px, py)
@@ -283,9 +279,48 @@ T_SPATIAL_DISTORTION.action = function(self, t)
         end
     end)
     local x3, y3 = util.findFreeGrid(x2, y2, 3, true, {[Map.ACTOR]=true})
-    if sdur > 0 and x3 then
-        local NPC = require "mod.class.NPC"
-        local m = NPC.new{
+
+    local NPC = require "mod.class.NPC"
+    local m
+
+    if eff and eff.charges==5 then		
+        self.turn_procs.halo_of_ruin = true
+        self:removeEffect(self.EFF_HALO_OF_RUIN)
+
+        m = NPC.new{
+			type = "horror", subtype = "corrupted",
+			name = _t"hungering mouth",
+			display = "h", color=colors.GREEN, blood_color = colors.GREEN,
+			desc = _t[["From below, it devours."]],
+			body = { INVEN = 10 },
+			faction = self.faction,
+			image="npc/hungering_mouth.png",
+			level_range = {1, self.level}, exp_worth = 0,
+			max_life = self:callTalent(self.T_HALO_OF_RUIN, "getLife"), life_rating = 20, fixed_rating = true,
+			rank = 3,
+			size_category = 3,
+			infravision = 10,
+			never_move = 1,
+			immune_possession = 1,
+			no_auto_resists = true,
+
+			resists = {all = math.min(50, self.level)},
+			combat_armor = self.level,
+			combat_armor_hardiness = 60,
+			combat = {dam=1},
+
+			resolvers.talents{
+				[self.T_DREM_CALL_OF_AMAKTHEL]=1,
+                [Talents.T_GRASPING_TENDRILS] = 1
+			},
+
+			autolevel = "warriormage",
+			ai = "summoned", ai_real = "dumb_talented", ai_state = { talent_in=1, },
+			summoner = self, summoner_gain_exp=true,
+			summon_time = self:callTalent(self.T_HALO_OF_RUIN, "getTime")
+		}
+    else
+        m = NPC.new{
             type = "horror", subtype = "eldritch",
             display = "h", blood_color = colors.BLUE,
             faction = self.faction,
@@ -320,6 +355,12 @@ T_SPATIAL_DISTORTION.action = function(self, t)
             summoner = self, summoner_gain_exp=true,
             summon_time = t.getSpatialDuration(self, t),
         }
+    end	
+    
+    
+    if sdur > 0 and x3 then
+        -- local NPC = require "mod.class.NPC"
+
         m:resolve()
         m:resolve(nil, true)		
         game.zone:addEntity(game.level, m, "actor", x3, y3)
@@ -357,11 +398,15 @@ T_HALO_OF_RUIN.getTargetCount = function(self, t)
     return targetCount
 end
 
+T_HALO_OF_RUIN.getLife = function(self, t) return self:combatStatScale("con", 70, 800) * (1 + self:getTalentLevel(t) / 5) end
+T_HALO_OF_RUIN.getTime = function(self, t) return 4 + math.floor(self:getTalentLevel(t)) end
+
+
 T_HALO_OF_RUIN.info = function(self, t)
 		return ([[Each time you cast a non-instant Demented spell, a nether spark begins orbiting around you for 10 turns, to a maximum of 5. Each spark increases your critical strike chance by %d%%, and on reaching 5 sparks your next Nether spell will consume all sparks to empower itself:
 #PURPLE#Netherblast:#LAST# Release a burst of void energy, piercing through %d random enemies (Prioritizing furthermost ones) and dealing an additional %d%% damage over 5 turns. An additional projectile is fired at Netherblast talent level 5.
-#PURPLE#Rift Cutter:#LAST# This talent is cast an additional time. Those in the rift will take %0.2f temporal damage each turn, and the rift explosion has %d increased radius.
-#PURPLE#Spatial Distortion:#LAST# An Entropic Maw will be summoned at the rift's exit for %d turns, pulling in and taunting nearby targets with it's tendrils.
+#PURPLE#Rift Cutter:#LAST# This talent is cast an additional time. Those in the rift will take %0.2f temporal damage each turn, and the rift explosion has %d increased radius. The mouth can draw all enemies in radius 10 for 2 spaces towards itself or taunt nearby enemies with its tendrils.
+#PURPLE#Spatial Distortion:#LAST# The Entropic Maw will be replaced with the more powerful hungering mouth that has %d maximum life and lasts for %d turns.
 The damage will increase with your Spellpower.  Entropic Maw stats will increase with level and your Magic stat.]]):
-		tformat(t.getCrit(self,t), t.getTargetCount(self,t), t.getSpikeDamage(self,t)*100, damDesc(self, DamageType.TEMPORAL, t.getRiftDamage(self,t)), t.getRiftRadius(self,t), t.getSpatialDuration(self,t))
+		tformat(t.getCrit(self,t), t.getTargetCount(self,t), t.getSpikeDamage(self,t)*100, damDesc(self, DamageType.TEMPORAL, t.getRiftDamage(self,t)), t.getRiftRadius(self,t), t.getLife(self, t), t.getTime(self, t))
 end

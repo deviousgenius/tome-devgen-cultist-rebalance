@@ -5,6 +5,7 @@ local Object = require "mod.class.Object"
 
 T_ENTROPIC_GIFT = Talents.talents_def.T_ENTROPIC_GIFT
 T_BLACK_HOLE = Talents.talents_def.T_BLACK_HOLE
+T_POWER_OVERWHELMING = Talents.talents_def.T_POWER_OVERWHELMING
 
 -- Entropic Gift
 
@@ -144,3 +145,7 @@ end
 -- Black Hole
 T_BLACK_HOLE.getDuration = function(self, t) return math.floor(self:combatTalentScale(t, 2, 4.6)) end
 T_BLACK_HOLE.getMaxRadius = function(self, t) return math.floor(self:combatTalentLimit(t, 5, 1, 4)) end
+
+-- Power Overwhelming
+
+-- IDEA: X extra SP per debuff on enemy

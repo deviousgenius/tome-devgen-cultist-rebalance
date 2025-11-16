@@ -23,3 +23,6 @@ load('/data-devgen-cultist-rebalance/talents/demented/void.lua')
 load('/data-devgen-cultist-rebalance/talents/demented/entropy.lua')
 load('/data-devgen-cultist-rebalance/talents/demented/timethief.lua')
 load('/data-devgen-cultist-rebalance/talents/demented/rift.lua')
+
+load('/data-devgen-cultist-rebalance/talents/demented/beyond-sanity.lua')
+load('/data-devgen-cultist-rebalance/talents/demented/doom.lua')

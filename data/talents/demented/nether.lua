@@ -27,12 +27,14 @@ T_NETHERBLAST.target = function(self, t)
 end
 
 T_NETHERBLAST.action = function(self, t)
-    local tg = self:getTalentTarget(t)
-    local dam = self:spellCrit(t.getDamage(self,t))
-    local eff = self:hasEffect(self.EFF_HALO_OF_RUIN)
     
+    local eff = self:hasEffect(self.EFF_HALO_OF_RUIN)
+
     if eff and eff.charges == 5 then
 
+        local tg = self:getTalentTarget(t)
+        local dam = self:spellCrit(t.getDamage(self,t))
+        local eff = self:hasEffect(self.EFF_HALO_OF_RUIN)
         self.turn_procs.halo_of_ruin = true
 		local perc = self:callTalent(self.T_HALO_OF_RUIN, "getSpikeDamage")
 
@@ -84,6 +86,12 @@ T_NETHERBLAST.action = function(self, t)
         for i = 1, shots do
             local tg = {type="bolt", range=self:getTalentRange(t), talent=t, friendlyblock=false, display={particle="netherblast"}}
             local x, y = self:getTarget(tg)
+
+            if i == 1 and (not x or not y) then return nil end
+
+            local tg = self:getTalentTarget(t)
+            local dam = self:spellCrit(t.getDamage(self,t))
+            
             if x and y then
                 self:projectile(tg, x, y, DamageType.VOID, dam, {type="voidblast"})
                 game:playSoundNear(self, "talents/netherblast")
@@ -291,7 +299,7 @@ T_SPATIAL_DISTORTION.action = function(self, t)
 			body = { INVEN = 10 },
 			faction = self.faction,
 			image="npc/hungering_mouth.png",
-			level_range = {1, self.level}, exp_worth = 0,
+			level_range = {self.level, self.level}, exp_worth = 0,
 			max_life = self:callTalent(self.T_HALO_OF_RUIN, "getLife"), life_rating = 20, fixed_rating = true,
 			rank = 3,
 			size_category = 3,
@@ -307,7 +315,7 @@ T_SPATIAL_DISTORTION.action = function(self, t)
 
 			resolvers.talents{
 				[self.T_DREM_CALL_OF_AMAKTHEL]=1,
-                [Talents.T_GRASPING_TENDRILS] = 1
+                [Talents.T_TAUNT]=1
 			},
 
 			autolevel = "warriormage",
@@ -359,7 +367,13 @@ T_SPATIAL_DISTORTION.action = function(self, t)
 
         m:resolve()
         m:resolve(nil, true)		
+
         game.zone:addEntity(game.level, m, "actor", x3, y3)
+
+        if m.name == _t"hungering mouth" then
+            m:forceUseTalent(m.T_TAUNT, {ignore_cd=true, no_talent_fail = true})
+        end
+
     end
     if self.in_combat then
         self:setEffect(self.EFF_ENTROPIC_WASTING, 8, {src=self, power=t.getBacklash(self, t) / 8})
@@ -402,7 +416,7 @@ T_HALO_OF_RUIN.info = function(self, t)
 		return ([[Each time you cast a non-instant Demented spell, a nether spark begins orbiting around you for 10 turns, to a maximum of 5. Each spark increases your critical strike chance by %d%%, and on reaching 5 sparks your next Nether spell will consume all sparks to empower itself:
 #PURPLE#Netherblast:#LAST# Release a burst of void energy, piercing through %d random enemies (Prioritizing furthermost ones) and dealing an additional %d%% damage over 5 turns. An additional projectile is fired at Netherblast talent level 5.
 #PURPLE#Rift Cutter:#LAST# This talent is cast an additional time. Those in the rift will take %0.2f temporal damage each turn, and the rift explosion has %d increased radius. The mouth can draw all enemies in radius 10 for 2 spaces towards itself or taunt nearby enemies with its tendrils.
-#PURPLE#Spatial Distortion:#LAST# The Entropic Maw will be replaced with the more powerful hungering mouth that has %d maximum life and lasts for %d turns.
+#PURPLE#Spatial Distortion:#LAST# The Entropic Maw will be replaced with the more powerful hungering mouth that scales with your level and lasts for %d turns.
 The damage will increase with your Spellpower.  Entropic Maw stats will increase with level and your Magic stat.]]):
-		tformat(t.getCrit(self,t), t.getTargetCount(self,t), t.getSpikeDamage(self,t)*100, damDesc(self, DamageType.TEMPORAL, t.getRiftDamage(self,t)), t.getRiftRadius(self,t), t.getLife(self, t), t.getTime(self, t))
+		tformat(t.getCrit(self,t), t.getTargetCount(self,t), t.getSpikeDamage(self,t)*100, damDesc(self, DamageType.TEMPORAL, t.getRiftDamage(self,t)), t.getRiftRadius(self,t), t.getTime(self, t))
 end

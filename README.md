@@ -34,4 +34,8 @@ Demented/Timethief
 
 Demented/Rift
 - Reality Fracture: Is now instant and chance of rifts spawning is increased to 50%.
-- Quantum Tunneling: Is now instant.
+- Quantum Tunneling: 
+    Is now instant
+    Can target anywhere within line of sight. 
+    If it teleports into a void rift, it destroys the rift and spawns three void rifts near your location.
+    If it doesn't, it creates a void rift at the teleport location.

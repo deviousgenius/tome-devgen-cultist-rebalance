@@ -32,7 +32,6 @@ T_NETHERBLAST.action = function(self, t)
     local eff = self:hasEffect(self.EFF_HALO_OF_RUIN)
     
     if eff and eff.charges == 5 then
-        game.logPlayer(self, "#RED#Halo of Ruin unleashes its full power!")
 
         self.turn_procs.halo_of_ruin = true
 		local perc = self:callTalent(self.T_HALO_OF_RUIN, "getSpikeDamage")
@@ -47,9 +46,6 @@ T_NETHERBLAST.action = function(self, t)
 		if #tgts > 0 then table.sort(tgts, function(a, b)
             return a.distance > b.distance 
         end) else return end
-
-
-        game.logPlayer(self, "#RED#Debug message 2")
 
         local count = T_HALO_OF_RUIN.getTargetCount(self, T_HALO_OF_RUIN)
         local i = 1

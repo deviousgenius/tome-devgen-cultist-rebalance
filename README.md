@@ -9,6 +9,11 @@ The full list of all changes is visible in the changelog below.
 
 Changelog:
 
+1.0.3
+
+Prophecy
+- Using one Prophecy puts the other two on a 1 turn cooldown.
+
 1.0.2
 
 Sanity Warp
@@ -101,6 +106,7 @@ Demented / Doom
 
 Prophecy
 - All prophecies are now instant.
+- Using one Prophecy puts the other two on a 1 turn cooldown.
 
 Demented / Beyond sanity
 

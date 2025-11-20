@@ -2,7 +2,7 @@ long_name = "Devgen's Cultist Rebalance"
 short_name = "devgen-cultist-rebalance"
 for_module = "tome"
 version = {1,7,6}
-addon_version = {1, 0, 1}
+addon_version = {1, 0, 3}
 weight = 27666
 author = {"devgen"}
 homepage = 'https://github.com/deviousgenius/tome-devgen-cultist-rebalance'
@@ -94,6 +94,7 @@ Demented / Doom
 
 Prophecy
 - All prophecies are now instant.
+- Using one Prophecy puts the other two on a 1 turn cooldown.
 
 Demented / Beyond sanity
 

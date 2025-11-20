@@ -9,6 +9,11 @@ The full list of all changes is visible in the changelog below.
 
 Changelog:
 
+1.0.2
+
+Sanity Warp
+- Fixed it going on cooldown and activating even if there were no hallucinations: Updated so it is visually clear it cannot be cast in such a circumstance
+
 1.0.1
 
 Changed Spatial Distortion (Empowered)

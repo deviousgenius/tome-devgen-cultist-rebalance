@@ -103,7 +103,6 @@ T_NETHERBLAST.action = function(self, t)
 			self:setEffect(self.EFF_ENTROPIC_WASTING, 8, {src=self, power=t.getBacklash(self, t) / 8})
 		end
     return true
-        
 end
 
 T_NETHERBLAST.info = function(self, t)

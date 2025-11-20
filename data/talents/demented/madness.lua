@@ -131,17 +131,46 @@ T_SANITY_WARP.insanity = 10
 T_SANITY_WARP.cooldown = 10
 T_SANITY_WARP.requires_target = false
 T_SANITY_WARP.no_energy = "fake"
+T_SANITY_WARP.on_pre_use = function(self, t, silent)
+	-- Must know the parent talent
+	if not self:getTalentFromId(self.T_HIDEOUS_VISIONS) then
+		if not silent then
+			game.logPlayer(self, "You must know Hideous Visions to use Sanity Warp.")
+		end
+		return false
+	end
+
+	-- Must have hallucinations
+	local found = false
+	for uid, target in pairs(game.level.entities) do
+		if target and not target.dead and target._hallucination and not target._hallucination.dead then
+			if self:reactionToward(target) < 0 then
+				found = true
+				break
+			end
+		end
+	end
+
+	if not found then
+		-- If silent=true, talent use was being *checked* (e.g. AI or hotkey highlight)
+		-- and we keep it silent.
+		if not silent then
+			game.logPlayer(self, "There are no hallucinations to warp.")
+		end
+		return false
+	end
+
+	return true
+end
+
+
 
 T_SANITY_WARP.getCount = function(self, t) return math.floor(self:combatTalentScale(t, 1, 3)) end
 
 T_SANITY_WARP.action = function(self, t)
-	if not self:getTalentFromId(self.T_HIDEOUS_VISIONS) then return false end
-	
 	local count = t.getCount(self, t)
-	
-	-- Repeat the spawning process count times
+
 	for i = 1, count do
-		-- Collect all valid targets for this iteration
 		local targets = {}
 		for uid, target in pairs(game.level.entities) do
 			if target and not target.dead and target._hallucination and not target._hallucination.dead then
@@ -150,23 +179,22 @@ T_SANITY_WARP.action = function(self, t)
 				end
 			end
 		end
-		
-		if #targets == 0 then
-			game.logPlayer(self, "Spawned %d wave(s) of hallucinations before running out of targets!", i - 1)
-			return true
-		end
-		
-		-- Spawn a new hallucination on each target (which kills the old one)
+
+		-- No need for an error message here anymore — on_pre_use handles it
 		for _, target in ipairs(targets) do
-			if target and not target.dead then
-				self:getTalentFromId(self.T_HIDEOUS_VISIONS).hideous_vision(self, self:getTalentFromId(self.T_HIDEOUS_VISIONS), target, true)
-			end
+			self:getTalentFromId(self.T_HIDEOUS_VISIONS).hideous_vision(
+				self,
+				self:getTalentFromId(self.T_HIDEOUS_VISIONS),
+				target,
+				true
+			)
 		end
 	end
-	
+
 	game.logPlayer(self, "Spawned %d wave(s) of hallucinations!", count)
 	return true
 end
+
 
 T_SANITY_WARP.info = function(self, t)
 	local count = t.getCount(self, t)

@@ -86,6 +86,7 @@ Demented/Timethief
 
 Accelerate
 - Added a passive movement speed increase by 11%-50%.
+- Buffed the active movement speed increase by 145%-601%.
 
 Switch
 - Is now instant.

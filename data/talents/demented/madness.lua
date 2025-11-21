@@ -132,6 +132,12 @@ T_SANITY_WARP.cooldown = 10
 T_SANITY_WARP.requires_target = false
 T_SANITY_WARP.no_energy = "fake"
 T_SANITY_WARP.on_pre_use = function(self, t, silent)
+
+	-- Must be in a level with entities (Should prevent bug when changing levels)
+	if not game.level or not game.level.entities then
+		return false
+	end
+
 	-- Must know the parent talent
 	if not self:getTalentFromId(self.T_HIDEOUS_VISIONS) then
 		if not silent then

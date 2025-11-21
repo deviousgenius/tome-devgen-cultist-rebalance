@@ -9,6 +9,11 @@ The full list of all changes is visible in the changelog below.
 
 Changelog:
 
+1.0.4
+
+Sanity Warp
+- Fixed the 1.0.2 change causing the game to bork out and dropping an error log when changing levels
+
 1.0.3
 
 Prophecy
